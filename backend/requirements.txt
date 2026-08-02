@@ -4,3 +4,5 @@ pandas
 scikit-learn
 python-multipart
 openpyxl
+psycopg2-binary
+gunicorn
