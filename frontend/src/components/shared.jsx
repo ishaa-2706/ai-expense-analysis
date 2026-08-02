@@ -1,5 +1,6 @@
 // ─── Spendwise AI – Shared Components ────────────────────────────────────────
 import React from "react";
+import { useAuth } from "../context/AuthContext";
 
 export const fmt = (n) =>
   `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
@@ -71,7 +72,6 @@ const NavIcons = {
       <path d="M13.73 21a2 2 0 01-3.46 0"/>
     </svg>
   ),
-  // ✅ NEW: Goals icon — piggy bank / target style
   Goals: (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/>
@@ -95,6 +95,13 @@ const NavIcons = {
       <path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M20 12h2M2 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/>
     </svg>
   ),
+  Logout: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  ),
 };
 
 export const NAV = [
@@ -105,13 +112,13 @@ export const NAV = [
   { label: "Reports",         path: "/reports"      },
   { label: "Predictions",     path: "/predictions"  },
   { label: "Alerts",          path: "/alerts"       },
-  { label: "Goals",           path: "/goals"        }, // ✅ NEW
+  { label: "Goals",           path: "/goals"        },
   { label: "Financial Score", path: "/score"        },
   { label: "Settings",        path: "/settings"     },
 ];
 
 // ── NavItem with hover state ───────────────────────────────────────────────────
-function NavItem({ item, active, onClick }) {
+function NavItem({ item, active, onClick, danger }) {
   const [hovered, setHovered] = React.useState(false);
   const isActive = active === item.path;
 
@@ -127,11 +134,13 @@ function NavItem({ item, active, onClick }) {
     cursor: "pointer",
     transition: "all .2s",
     marginBottom: 2,
-    color: isActive ? "#fff" : hovered ? "#fff" : "#94A3B8",
+    color: danger
+      ? hovered ? "#FCA5A5" : "#94A3B8"
+      : isActive ? "#fff" : hovered ? "#fff" : "#94A3B8",
     background: isActive
       ? "rgba(124,58,237,0.25)"
       : hovered
-      ? "rgba(255,255,255,0.07)"
+      ? danger ? "rgba(239,68,68,0.1)" : "rgba(255,255,255,0.07)"
       : "transparent",
     borderLeft: isActive ? "3px solid #7C3AED" : "3px solid transparent",
   };
@@ -152,27 +161,32 @@ function NavItem({ item, active, onClick }) {
 }
 
 // ── Sidebar ────────────────────────────────────────────────────────────────────
-export function Sidebar({ active, navigate, user }) {
-  const u = user || { name: "User", email: "user@example.com" };
+export function Sidebar({ active, navigate }) {
+  const { user, logout } = useAuth();
+
+  const displayName  = user?.name  || "User";
+  const displayEmail = user?.email || "";
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <aside style={ss.sidebar}>
+
+      {/* ── LOGO ── */}
       <div style={ss.logoArea}>
         <img
           src="/src/assets/logo.png"
-          alt="Spendwise AI"
+          alt="SpendWise"
           style={ss.logoImg}
-          onError={(e) => {
-            e.target.style.display = "none";
-            e.target.nextSibling.style.display = "flex";
-          }}
+          onError={(e) => { e.target.style.display = "none"; }}
         />
-        <div style={{ ...ss.logoFallback, display: "none" }}>
-          <div style={ss.logoFallbackIcon}>S</div>
-          <div>
-            <div style={ss.logoName}>Spendwise AI</div>
-            <div style={ss.logoSub}>Student Expense Analyser</div>
-          </div>
+        <div>
+          <span style={ss.logoName}>SpendWise</span>
+          <span style={ss.logoSub}>AI Expense Analyzer</span>
         </div>
       </div>
 
@@ -186,17 +200,35 @@ export function Sidebar({ active, navigate, user }) {
             onClick={() => navigate(item.path)}
           />
         ))}
+
+        {/* ── Logout ── */}
+        <NavItem
+          item={{ label: "Logout", path: "" }}
+          active=""
+          onClick={handleLogout}
+          danger
+        />
       </nav>
 
       {/* ── USER CARD ── */}
       <div style={ss.userCard}>
-        <div style={ss.avatar}>{u.name[0]}</div>
+        {/* ✅ Show Gmail profile pic if available, else fallback to letter avatar */}
+        {user?.photo ? (
+          <img
+            src={user.photo}
+            alt={displayName}
+            style={ss.avatarImg}
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div style={ss.avatar}>{avatarLetter}</div>
+        )}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 13, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {u.name}
+            {displayName}
           </div>
           <div style={{ fontSize: 11, color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {u.email}
+            {displayEmail}
           </div>
         </div>
       </div>
@@ -206,9 +238,9 @@ export function Sidebar({ active, navigate, user }) {
 }
 
 export const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #F0F4FF 0%, #F8FAFC 50%, #FDF4FF 100%); }
+  body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #F0F4FF 0%, #F8FAFC 50%, #FDF4FF 100%); }
   button:hover { opacity: .9; }
   .sw-card { background: rgba(255,255,255,0.82); backdrop-filter: blur(10px); border-radius: 20px; padding: 22px; border: 1.5px solid #E5E7EB; box-shadow: 0 2px 12px rgba(0,0,0,0.07); transition: box-shadow .2s, transform .2s; }
   .sw-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.12); transform: translateY(-1px); }
@@ -218,13 +250,79 @@ export const GLOBAL_CSS = `
 `;
 
 const ss = {
-  sidebar:          { width: 220, background: "#0F172A", display: "flex", flexDirection: "column", padding: "24px 12px", flexShrink: 0, minHeight: "100vh" },
-  logoArea:         { padding: "0 4px", marginBottom: 28 },
-  logoImg:          { width: "100%", maxWidth: 196, height: "auto", objectFit: "contain", display: "block" },
-  logoFallback:     { display: "flex", alignItems: "center", gap: 10 },
-  logoFallbackIcon: { width: 36, height: 36, background: "#7C3AED", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 16, flexShrink: 0 },
-  logoName:         { fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 15, color: "#fff" },
-  logoSub:          { fontSize: 9, color: "#64748B", marginTop: 1 },
-  userCard:         { display: "flex", alignItems: "center", gap: 10, padding: "12px 8px", borderTop: "1px solid #1E293B", marginTop: 8 },
-  avatar:           { width: 34, height: 34, borderRadius: "50%", background: "#7C3AED", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 14, flexShrink: 0 },
+  sidebar: {
+    width: 220,
+    background: "#0F172A",
+    display: "flex",
+    flexDirection: "column",
+    padding: "24px 12px",
+    flexShrink: 0,
+    height: "100vh",
+    position: "fixed",
+    top: 0,
+    left: 0,
+    overflowY: "auto",
+    zIndex: 100,
+  },
+  logoArea: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "0 4px",
+    marginBottom: 28,
+  },
+  logoImg: {
+    width: 40,
+    height: 40,
+    objectFit: "contain",
+    flexShrink: 0,
+  },
+  logoName: {
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: 700,
+    fontSize: 15,
+    color: "#fff",
+    lineHeight: 1,
+    display: "block",
+  },
+  logoSub: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: 9,
+    color: "#64748B",
+    marginTop: 3,
+    letterSpacing: "0.7px",
+    textTransform: "uppercase",
+    display: "block",
+  },
+  userCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "12px 8px",
+    borderTop: "1px solid #1E293B",
+    marginTop: 8,
+  },
+  // letter avatar — shown when no profile photo
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: "50%",
+    background: "#7C3AED",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: 14,
+    flexShrink: 0,
+  },
+  // ✅ profile photo — shown for Google/Apple login
+  avatarImg: {
+    width: 34,
+    height: 34,
+    borderRadius: "50%",
+    objectFit: "cover",
+    flexShrink: 0,
+    border: "2px solid #7C3AED",
+  },
 };
