@@ -23,28 +23,29 @@ export function AuthProvider({ children }) {
     setUser(res.data.user);
   };
 
+  // ── NEW: Google sign-in now exchanges the Firebase ID token for our own
+  //         backend JWT, so /api/history, /api/goals, etc. work correctly. ──
   const loginWithGoogle = async () => {
     const result = await signInGoogle();
     const firebaseUser = result.user;
-    const userData = {
-      name:  firebaseUser.displayName,
-      email: firebaseUser.email,
-      photo: firebaseUser.photoURL,
-    };
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
+    const idToken = await firebaseUser.getIdToken();
+
+    const res = await api.post("/api/auth/google", { idToken });
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+    setUser(res.data.user);
   };
 
+  // ── NEW: same pattern for Apple sign-in ──────────────────────────────────
   const loginWithApple = async () => {
     const result = await signInApple();
     const firebaseUser = result.user;
-    const userData = {
-      name:  firebaseUser.displayName,
-      email: firebaseUser.email,
-      photo: firebaseUser.photoURL,
-    };
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
+    const idToken = await firebaseUser.getIdToken();
+
+    const res = await api.post("/api/auth/apple", { idToken });
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+    setUser(res.data.user);
   };
 
   const forgotPassword = (email) => sendReset(email);
