@@ -24,7 +24,10 @@ from datetime import datetime, timedelta
 # ────────────────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[
+    "https://spendwise-expense-analyzer.netlify.app",
+    "http://localhost:5173"
+], supports_credentials=True)
 
 # ── NEW: App config ──────────────────────────────────────────────────────────
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///spendwise.db")

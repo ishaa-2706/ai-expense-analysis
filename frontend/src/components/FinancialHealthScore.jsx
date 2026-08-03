@@ -155,7 +155,7 @@ export default function FinancialHealthScore() {
       const isDemo = uploadedTransactions.length === 0;
       setSource(isDemo ? "demo" : "uploaded");
 
-      const res = await fetch("http://127.0.0.1:8000/api/financial-score", {
+      const res = await fetch("https://ai-expense-analysis.onrender.com/api/financial-score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transactions }),

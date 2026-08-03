@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import robotAvatar from "../assets/robot-avatar.png";
 import { useNavigate } from "react-router-dom";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -128,7 +129,7 @@ const IconX = ({ size = 14, color = "#fff" }) => (
 function BotAvatar({ size = 32 }) {
   return (
     <img
-      src="/src/assets/robot-avatar.png"
+      src={robotAvatar}
       alt="AI"
       style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
       onError={(e) => {
@@ -217,7 +218,7 @@ function Chatbot({ onClose }) {
     setMessages(prev => [...prev, { role: "user", text: q }]);
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/ask-ai", {
+      const res = await fetch("https://ai-expense-analysis.onrender.com/api/ask-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
@@ -630,7 +631,7 @@ export default function Dashboard() {
           ? <IconX size={18} color="#fff" />
           : (
             <img
-              src="/src/assets/robot-avatar.png"
+              src={robotAvatar}
               alt="AI"
               style={{ width: 56, height: 56, objectFit: "cover", borderRadius: "50%" }}
               onError={(e) => {

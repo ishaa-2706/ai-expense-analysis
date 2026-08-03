@@ -1,5 +1,6 @@
 // ─── Spendwise AI – Shared Components ────────────────────────────────────────
 import React from "react";
+import logo from "../assets/logo.png";
 import { useAuth } from "../context/AuthContext";
 
 export const fmt = (n) =>
@@ -179,7 +180,7 @@ export function Sidebar({ active, navigate }) {
       {/* ── LOGO ── */}
       <div style={ss.logoArea}>
         <img
-          src="/src/assets/logo.png"
+          src={logo}
           alt="SpendWise"
           style={ss.logoImg}
           onError={(e) => { e.target.style.display = "none"; }}

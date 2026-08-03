@@ -143,7 +143,7 @@ const saveQueue   = (q) => localStorage.setItem(OFFLINE_KEY, JSON.stringify(q));
 const isBackendReachable = async () => {
   if (!navigator.onLine) return false;
   try {
-    const res = await fetch("http://127.0.0.1:8000/health", {
+    const res = await fetch("https://ai-expense-analysis.onrender.com/health", {
       method: "HEAD",
       signal: AbortSignal.timeout(2000), // 2s timeout
     });
@@ -163,7 +163,7 @@ const syncToBackend = async (entry) => {
   const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
 
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/manual-expense", {
+    const res = await fetch("https://ai-expense-analysis.onrender.com/api/manual-expense", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entry),

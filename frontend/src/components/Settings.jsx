@@ -84,7 +84,7 @@ export default function Settings() {
           <div className="sw-card">
             <div style={s.cardTitle}>ℹ️ About</div>
             <div style={{ display: "flex", gap: 12, flexDirection: "column" }}>
-              {[["App", "Spendwise AI"], ["Version", "1.0.0"], ["Backend", "FastAPI @ localhost:8000"], ["Frontend", "React + Recharts"]].map(([k, v]) => (
+              {[["App", "Spendwise AI"], ["Version", "1.0.0"], ["Backend", "Flask @ Render"], ["Frontend", "React + Recharts"]].map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                   <span style={{ color: "#9CA3AF" }}>{k}</span>
                   <span style={{ color: "#374151", fontWeight: 500 }}>{v}</span>

@@ -154,9 +154,10 @@ export default function Upload() {
     formData.append("file", file);
 
     const isPdf     = getFileExt() === "pdf";
-    const endpoint  = isPdf
-      ? "http://localhost:8000/upload-pdf"
-      : "http://localhost:8000/upload";
+const BASE_URL  = "https://ai-expense-analysis.onrender.com";
+const endpoint  = isPdf
+  ? `${BASE_URL}/upload-pdf`
+  : `${BASE_URL}/upload`;
 
     if (isPdf && pdfPassword) {
       formData.append("password", pdfPassword);
