@@ -23,6 +23,23 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 # ────────────────────────────────────────────────────────────────────────────
 
+# ── NEW: Firebase Admin SDK (for Google/Apple sign-in verification) ─────────
+import firebase_admin
+from firebase_admin import credentials, auth as firebase_auth
+
+firebase_creds_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+if firebase_creds_json:
+    try:
+        firebase_creds_dict = json.loads(firebase_creds_json)
+        cred = credentials.Certificate(firebase_creds_dict)
+        firebase_admin.initialize_app(cred)
+        print("[firebase] Admin SDK initialized successfully.")
+    except Exception as e:
+        print(f"[firebase] Failed to initialize Admin SDK: {e}")
+else:
+    print("[firebase] WARNING: FIREBASE_SERVICE_ACCOUNT_JSON not set. Google/Apple login will not work.")
+# ────────────────────────────────────────────────────────────────────────────
+
 app = Flask(__name__)
 CORS(app, origins=[
     "https://spendwise-expense-analyzer.netlify.app",
@@ -146,7 +163,7 @@ class Alert(db.Model):
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# AUTH ROUTES  (NEW)
+# AUTH ROUTES  (email/password)
 # ════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/register", methods=["POST"])
@@ -196,6 +213,74 @@ def get_me():
     user_id = int(get_jwt_identity())
     user = User.query.get_or_404(user_id)
     return jsonify({"id": user.id, "name": user.name, "email": user.email}), 200
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# AUTH ROUTES  (NEW: Google / Apple sign-in via Firebase ID token)
+# ════════════════════════════════════════════════════════════════════════════
+
+def _verify_firebase_and_issue_jwt(id_token):
+    """
+    Shared helper: verifies a Firebase ID token, finds-or-creates the
+    matching User row, and returns (jwt_token, user_dict).
+    Raises ValueError on invalid token.
+    """
+    try:
+        decoded = firebase_auth.verify_id_token(id_token)
+    except Exception as e:
+        raise ValueError(f"Invalid Firebase ID token: {str(e)}")
+
+    email = decoded.get("email")
+    name  = decoded.get("name", "") or (email.split("@")[0] if email else "User")
+
+    if not email:
+        raise ValueError("Firebase token did not contain an email address")
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        # Social-login users get a random unusable password hash —
+        # they will only ever authenticate via Firebase, not email/password.
+        user = User(
+            name=name,
+            email=email,
+            password_hash=generate_password_hash(os.urandom(16).hex()),
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    token = create_access_token(identity=str(user.id))
+    user_dict = {"id": user.id, "name": user.name, "email": user.email}
+    return token, user_dict
+
+
+@app.route("/api/auth/google", methods=["POST"])
+def google_login():
+    data = request.get_json()
+    id_token = data.get("idToken") if data else None
+    if not id_token:
+        return jsonify({"error": "idToken is required"}), 400
+
+    try:
+        token, user_dict = _verify_firebase_and_issue_jwt(id_token)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 401
+
+    return jsonify({"token": token, "user": user_dict}), 200
+
+
+@app.route("/api/auth/apple", methods=["POST"])
+def apple_login():
+    data = request.get_json()
+    id_token = data.get("idToken") if data else None
+    if not id_token:
+        return jsonify({"error": "idToken is required"}), 400
+
+    try:
+        token, user_dict = _verify_firebase_and_issue_jwt(id_token)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 401
+
+    return jsonify({"token": token, "user": user_dict}), 200
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -577,7 +662,7 @@ def ask_ai():
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# GOAL ROUTES  (NEW)
+# GOAL ROUTES
 # ════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/goals", methods=["GET"])
@@ -660,7 +745,7 @@ def delete_goal(goal_id):
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# CASH TRACKER ROUTES  (NEW)
+# CASH TRACKER ROUTES
 # ════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/cash-expenses", methods=["GET"])
@@ -712,7 +797,7 @@ def delete_cash_expense(exp_id):
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# HISTORY & ALERTS ROUTES  (NEW)
+# HISTORY & ALERTS ROUTES
 # ════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/history", methods=["GET"])

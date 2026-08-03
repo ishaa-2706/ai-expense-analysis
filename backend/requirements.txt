@@ -11,4 +11,4 @@ pypdf
 google-generativeai
 psycopg2-binary
 gunicorn
-scikit-learn
+scikit-learnfirebase-admin
